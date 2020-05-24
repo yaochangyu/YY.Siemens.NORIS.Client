@@ -47,9 +47,7 @@ namespace YY.Siemens.NORIS.Client
             this.Connection.Stop();
         }
 
-        public bool CreateEventSubscription(string                           token,
-                                            Guid                             requestId,
-                                            string                           connectionId,
+        public bool CreateEventSubscription(SubscriptionRequest              subscription,
                                             Action<NotifySubscriptionStatus> action)
         {
             this.HubProxy.On("notifySubscriptionStatus",
@@ -60,15 +58,16 @@ namespace YY.Siemens.NORIS.Client
                              });
 
             var client = new RestClient(this.BaseUrl);
-            var url    = $"/api/sr/eventssubscriptions/channelize/{requestId}/{connectionId}";
+            var url    = $"/api/sr/eventssubscriptions/channelize/{subscription.RequestId}/{subscription.ConnectionId}";
 
             var request = new RestRequest(url, Method.POST);
 
-            client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(token, "Bearer");
+            client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(subscription.AccessToken,
+                                                                                     "Bearer");
 
             //request.AddHeader("Authorization", $"bearer {token}");
-
             //request.AddHeader("Content-Type", "application/json");
+
             var response = client.Execute(request);
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -78,9 +77,7 @@ namespace YY.Siemens.NORIS.Client
             return true;
         }
 
-        public bool CreateValueSubscription(string                           token,
-                                            Guid                             requestId,
-                                            string                           connectionId,
+        public bool CreateValueSubscription(SubscriptionRequest              subscription,
                                             string[]                         objectIds,
                                             Action<IEnumerable<NotifyValue>> action)
         {
@@ -92,15 +89,16 @@ namespace YY.Siemens.NORIS.Client
                              });
 
             var client = new RestClient(this.BaseUrl);
-            var url    = $"/api/sr/valuessubscriptions/channelize/{requestId}/{connectionId}";
+            var url    = $"/api/sr/valuessubscriptions/channelize/{subscription.RequestId}/{subscription.ConnectionId}";
 
             var request = new RestRequest(url, Method.POST);
 
-            client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(token, "Bearer");
+            client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(subscription.AccessToken,
+                                                                                     "Bearer");
 
             //request.AddHeader("Authorization", $"bearer {token}");
-
             //request.AddHeader("Content-Type", "application/json");
+
             var requestContent = JsonConvert.SerializeObject(objectIds);
             request.AddParameter("application/json", requestContent, ParameterType.RequestBody);
             var response = client.Execute(request);
