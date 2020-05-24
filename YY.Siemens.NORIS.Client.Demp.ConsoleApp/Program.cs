@@ -10,7 +10,13 @@ namespace YY.Siemens.NORIS.Client.Demp.ConsoleApp
     {
         private static void Main(string[] args)
         {
+            //匯入設定
             AppSetting.Import(@"d:\app.json");
+
+            ////手動設定
+            //AppSetting.BaseUrl  = "http://aa.bb";
+            //AppSetting.Id       = "your id";
+            //AppSetting.Password = "your password";
 
             var tokenProvider        = new TokenProvider();
             var subscriptionProvider = new SubscriptionProvider();
