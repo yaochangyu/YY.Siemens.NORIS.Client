@@ -10,9 +10,29 @@ using YY.Siemens.NORIS.Client.Models;
 
 namespace YY.Siemens.NORIS.Client
 {
-    public class SubscriptionProvider
+    public class SubscriptionProvider : IDisposable
     {
-        public string BaseUrl { get; set; }
+        public HubConnection Connection { get; internal set; }
+
+        public IHubProxy HubProxy { get; internal set; }
+
+        public string BaseUrl
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(this._baseUrl))
+                {
+                    return AppSetting.BaseUrl;
+                }
+
+                return this._baseUrl;
+            }
+            set => this._baseUrl = value;
+        }
+
+        private string _baseUrl;
+
+        private bool _disposed;
 
         public SubscriptionProvider()
         {
@@ -21,14 +41,26 @@ namespace YY.Siemens.NORIS.Client
                 this.BaseUrl = AppSetting.BaseUrl;
             }
         }
-        public EventHandler<IEnumerable<NotifyValue>> ValueChanged { get; set; }
 
-        public EventHandler<NotifySubscriptionStatus> SubscriptionStatusChanged { get; set; }
-
-        public bool CreateEventSubscription(string token, Guid requestId, string connectId)
+        public void CloseConnection()
         {
+            this.Connection.Stop();
+        }
+
+        public bool CreateEventSubscription(string                           token,
+                                            Guid                             requestId,
+                                            string                           connectionId,
+                                            Action<NotifySubscriptionStatus> action)
+        {
+            this.HubProxy.On("notifySubscriptionStatus",
+                             (NotifySubscriptionStatus o) =>
+                             {
+                                 Console.WriteLine("接收 notifySubscriptionStatus 事件");
+                                 action.Invoke(o);
+                             });
+
             var client = new RestClient(this.BaseUrl);
-            var url    = $"/api/sr/eventssubscriptions/channelize/{requestId}/{connectId}";
+            var url    = $"/api/sr/eventssubscriptions/channelize/{requestId}/{connectionId}";
 
             var request = new RestRequest(url, Method.POST);
 
@@ -46,39 +78,21 @@ namespace YY.Siemens.NORIS.Client
             return true;
         }
 
-        public async Task<HubConnection> CreateConnection()
+        public bool CreateValueSubscription(string                           token,
+                                            Guid                             requestId,
+                                            string                           connectionId,
+                                            string[]                         objectIds,
+                                            Action<IEnumerable<NotifyValue>> action)
         {
-            var connection = new HubConnection($"{this.BaseUrl}/signalr/hubs");
-            var hubProxy   = connection.CreateHubProxy("norisHub");
+            this.HubProxy.On("notifyValues",
+                             (IEnumerable<NotifyValue> o) =>
+                             {
+                                 Console.WriteLine("接收 notifyValues 事件");
+                                 action.Invoke(o);
+                             });
 
-            hubProxy.On("notifyValues",
-                        (IEnumerable<NotifyValue> o) =>
-                        {
-                            Console.WriteLine(o);
-                            if (this.ValueChanged != null)
-                            {
-                                this.ValueChanged.Invoke(this, o);
-                            }
-                        });
-
-            hubProxy.On("notifySubscriptionStatus",
-                        (NotifySubscriptionStatus o) =>
-                        {
-                            Console.WriteLine(o);
-                            if (this.SubscriptionStatusChanged != null)
-                            {
-                                this.SubscriptionStatusChanged.Invoke(this, o);
-                            }
-                        });
-
-            await connection.Start().ConfigureAwait(false);
-            return connection;
-        }
-
-        public bool CreateValueSubscription(string token, Guid requestId, string connectId, params string[] objectIds)
-        {
             var client = new RestClient(this.BaseUrl);
-            var url    = $"/api/sr/valuessubscriptions/channelize/{requestId}/{connectId}";
+            var url    = $"/api/sr/valuessubscriptions/channelize/{requestId}/{connectionId}";
 
             var request = new RestRequest(url, Method.POST);
 
@@ -96,6 +110,34 @@ namespace YY.Siemens.NORIS.Client
             }
 
             return true;
+        }
+
+        public async Task<HubConnection> OpenConnectionAsync()
+        {
+            this.Connection = new HubConnection($"{this.BaseUrl}/signalr/hubs");
+            this.HubProxy   = this.Connection.CreateHubProxy("norisHub");
+
+            await this.Connection.Start().ConfigureAwait(false);
+            return this.Connection;
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this._disposed)
+            {
+                if (disposing)
+                {
+                    this.Connection.Dispose();
+                }
+
+                this._disposed = true;
+            }
         }
     }
 }
