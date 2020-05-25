@@ -5,25 +5,21 @@ namespace YY.Siemens.NORIS.Client
 {
     public class AppSetting
     {
-        public static string BaseUrl { get; set; }
+        public string BaseUrl { get; set; }
 
-        public static string Id { get; set; }
+        public string Id { get; set; }
 
-        public static string Password { get; set; }
+        public string Password { get; set; }
 
-        public static void Export(string filePath)
+        public static void Export(AppSetting appSetting, string filePath)
         {
-            var config = new {BaseUrl, Id, Password};
-            File.WriteAllText(filePath, JsonConvert.SerializeObject(config));
+            File.WriteAllText(filePath, JsonConvert.SerializeObject(appSetting));
         }
 
-        public static void Import(string filePath)
+        public static AppSetting Import(string filePath)
         {
-            dynamic config = JsonConvert.DeserializeObject(File.ReadAllText(filePath));
-
-            BaseUrl  = config.BaseUrl;
-            Id       = config.Id;
-            Password = config.Password;
+            var appSetting = JsonConvert.DeserializeObject<AppSetting>(File.ReadAllText(filePath));
+            return appSetting;
         }
     }
 }

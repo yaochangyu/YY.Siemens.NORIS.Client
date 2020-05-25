@@ -7,21 +7,7 @@ namespace YY.Siemens.NORIS.Client
 {
     public class TokenProvider
     {
-        public string BaseUrl
-        {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(this._baseUrl))
-                {
-                    return AppSetting.BaseUrl;
-                }
-
-                return this._baseUrl;
-            }
-            set => this._baseUrl = value;
-        }
-
-        private string _baseUrl;
+        public string BaseUrl { get; set; }
 
         public Token Login(string id, string password)
         {

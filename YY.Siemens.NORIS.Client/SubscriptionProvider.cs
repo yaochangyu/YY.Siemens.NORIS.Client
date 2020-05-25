@@ -16,35 +16,14 @@ namespace YY.Siemens.NORIS.Client
 
         public IHubProxy HubProxy { get; internal set; }
 
-        public string BaseUrl
-        {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(this._baseUrl))
-                {
-                    return AppSetting.BaseUrl;
-                }
-
-                return this._baseUrl;
-            }
-            set => this._baseUrl = value;
-        }
-
-        private string _baseUrl;
+        public string BaseUrl { get; set; }
 
         private bool _disposed;
-
-        public SubscriptionProvider()
-        {
-            if (string.IsNullOrWhiteSpace(this.BaseUrl))
-            {
-                this.BaseUrl = AppSetting.BaseUrl;
-            }
-        }
 
         public void CloseConnection()
         {
             this.Connection.Stop();
+            this.Connection.Dispose();
         }
 
         public bool CreateEventSubscription(SubscriptionRequest              subscription,

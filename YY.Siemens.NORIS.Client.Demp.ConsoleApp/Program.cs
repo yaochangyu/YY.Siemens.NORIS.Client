@@ -10,19 +10,29 @@ namespace YY.Siemens.NORIS.Client.Demp.ConsoleApp
     {
         private static void Main(string[] args)
         {
+            //為了避免敏感性資料上傳到github，所以應該將參數依賴於外部檔案
             //匯入設定
-            AppSetting.Import(@"d:\app.json");
+            var appSetting = AppSetting.Import(@"d:\app.json");
 
-            ////手動設定
-            //AppSetting.BaseUrl  = "http://aa.bb";
-            //AppSetting.Id       = "your id";
-            //AppSetting.Password = "your password";
+            //手動設定，設定參數後，匯出成 josn 檔
+            //var appSetting = new AppSetting();
 
-            var tokenProvider        = new TokenProvider();
-            var subscriptionProvider = new SubscriptionProvider();
-            var token                = tokenProvider.Login(AppSetting.Id, AppSetting.Password);
-            var connection           = subscriptionProvider.OpenConnectionAsync().Result;
-            var connectionId         = connection.ConnectionId;
+            //appSetting.BaseUrl  = "your url, http or https";
+            //appSetting.Id       = "your id";
+            //appSetting.Password = "your password";
+            //AppSetting.Export(appSetting, @"d:\app.json");
+
+            var tokenProvider = new TokenProvider
+            {
+                BaseUrl = appSetting.BaseUrl
+            };
+            var subscriptionProvider = new SubscriptionProvider
+            {
+                BaseUrl = appSetting.BaseUrl
+            };
+            var token        = tokenProvider.Login(appSetting.Id, appSetting.Password);
+            var connection   = subscriptionProvider.OpenConnectionAsync().Result;
+            var connectionId = connection.ConnectionId;
             if (connection.State == ConnectionState.Connected)
             {
                 Console.WriteLine($"已連線, Id={connectionId}");
@@ -44,6 +54,7 @@ namespace YY.Siemens.NORIS.Client.Demp.ConsoleApp
 
             Console.WriteLine("按任意鍵離開");
             Console.ReadKey();
+            subscriptionProvider.CloseConnection();
         }
 
         private static void NotifySubscriptionStatus(NotifySubscriptionStatus e)
