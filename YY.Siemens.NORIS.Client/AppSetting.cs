@@ -18,8 +18,7 @@ namespace YY.Siemens.NORIS.Client
 
         public static AppSetting Import(string filePath)
         {
-            var appSetting = JsonConvert.DeserializeObject<AppSetting>(File.ReadAllText(filePath));
-            return appSetting;
+            return JsonConvert.DeserializeObject<AppSetting>(File.ReadAllText(filePath));
         }
     }
 }
