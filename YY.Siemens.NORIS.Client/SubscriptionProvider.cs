@@ -27,13 +27,13 @@ namespace YY.Siemens.NORIS.Client
         }
 
         public bool CreateEventSubscription(SubscriptionRequest              subscription,
-                                            Action<NotifySubscriptionStatus> action)
+                                            Action<NotifySubscriptionStatus> callback)
         {
             this.HubProxy.On("notifySubscriptionStatus",
                              (NotifySubscriptionStatus o) =>
                              {
                                  Console.WriteLine("接收 notifySubscriptionStatus 事件");
-                                 action.Invoke(o);
+                                 callback.Invoke(o);
                              });
 
             var client = new RestClient(this.BaseUrl);
@@ -58,13 +58,13 @@ namespace YY.Siemens.NORIS.Client
 
         public bool CreateValueSubscription(SubscriptionRequest              subscription,
                                             string[]                         objectIds,
-                                            Action<IEnumerable<NotifyValue>> action)
+                                            Action<IEnumerable<NotifyValue>> callback)
         {
             this.HubProxy.On("notifyValues",
                              (IEnumerable<NotifyValue> o) =>
                              {
                                  Console.WriteLine("接收 notifyValues 事件");
-                                 action.Invoke(o);
+                                 callback.Invoke(o);
                              });
 
             var client = new RestClient(this.BaseUrl);
